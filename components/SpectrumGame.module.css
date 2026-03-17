@@ -19,12 +19,44 @@
   to { opacity: 1; transform: translateX(0); }
 }
 
-.card {
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+/* ── Viewport-pinned layout ── */
+.container {
+  height: 100dvh;
+  height: 100vh; /* fallback for older browsers */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #07070f;
+  color: #e8e8f0;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 0 16px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 
-.card:active {
-  transform: scale(0.975) !important;
+@supports (height: 100dvh) {
+  .container {
+    height: 100dvh;
+  }
+}
+
+.cardsArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0; /* allow flex shrink */
+  touch-action: none; /* prevent scroll — we handle drag */
+  position: relative;
+}
+
+/* ── Card styles ── */
+.card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  flex: 1;
+  min-height: 0;
 }
 
 .card:focus-visible {
@@ -32,6 +64,19 @@
   outline-offset: 2px;
 }
 
+.cardDragging {
+  z-index: 10;
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.4) !important;
+  opacity: 0.95;
+  scale: 1.03;
+  pointer-events: none;
+}
+
+.cardShift {
+  transition: transform 0.2s ease;
+}
+
+/* ── Animations ── */
 .ambientGlow {
   animation: glow 3s ease-in-out infinite;
 }

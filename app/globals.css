@@ -4,6 +4,11 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   background: #07070f;
   color: #e8e8f0;
