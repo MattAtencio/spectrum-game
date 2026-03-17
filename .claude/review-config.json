@@ -1,0 +1,23 @@
+{
+  "project_name": "Spectrum",
+  "description": "Daily word ordering puzzle PWA — sort words along a gradient",
+  "tech_stack": ["Next.js 15", "React 19", "JavaScript", "next-pwa", "Vercel"],
+  "security": {
+    "auth_pattern": "none — no user accounts",
+    "sensitive_data": ["none — all client-side, no secrets"],
+    "extra_checks": ["Verify no API keys in client bundle", "Check CSP headers"]
+  },
+  "architecture": {
+    "key_boundaries": ["Single standalone Next.js app", "Client-only — no API routes"],
+    "infrastructure": "Vercel free tier, static/SSG where possible"
+  },
+  "product": {
+    "user_roles": ["player"],
+    "critical_flows": ["Daily puzzle load", "Card tap/swap interaction", "Score reveal + animation", "Share result", "PWA install", "XP/streak persistence"]
+  },
+  "business": {
+    "industry": "Casual gaming",
+    "competitors": ["Wordle", "Connections", "Heardle"],
+    "revenue_model": "Free — hobby project for friends/family"
+  }
+}
