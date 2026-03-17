@@ -5,18 +5,8 @@
 // ============================================================
 
 import { useState, useEffect, useCallback } from "react";
-
-// ─── Puzzle Data ─────────────────────────────────────────────
-const PUZZLES = [
-  { theme: "Speed",       emoji: "\u26a1",  low: "Slowest",  high: "Fastest",  colorA: "#93c5fd", colorB: "#f97316", answer: ["Glacier","Snail","Sloth","Walking","Jogging","Sprinting","Cheetah","Lightning"] },
-  { theme: "Temperature", emoji: "\ud83c\udf21\ufe0f", low: "Coldest",  high: "Hottest",  colorA: "#60a5fa", colorB: "#ef4444", answer: ["Blizzard","Frost","Chilly","Cool","Warm","Toasty","Scorching","Inferno"] },
-  { theme: "Volume",      emoji: "\ud83d\udd0a",  low: "Quietest", high: "Loudest",  colorA: "#86efac", colorB: "#dc2626", answer: ["Silence","Rustle","Whisper","Murmur","Talking","Shouting","Thunder","Rocket"] },
-  { theme: "Size",        emoji: "\ud83d\udcd0",  low: "Tiniest",  high: "Largest",  colorA: "#c4b5fd", colorB: "#fbbf24", answer: ["Atom","Cell","Ant","Grape","Basketball","Car","Whale","Mountain"] },
-  { theme: "Spice Level", emoji: "\ud83c\udf36\ufe0f", low: "Mildest",  high: "Spiciest", colorA: "#fde68a", colorB: "#dc2626", answer: ["Cucumber","Bell Pepper","Paprika","Jalape\u00f1o","Serrano","Habanero","Ghost Pepper","Carolina Reaper"] },
-  { theme: "Wealth",      emoji: "\ud83d\udcb0",  low: "Poorest",  high: "Richest",  colorA: "#d1fae5", colorB: "#fbbf24", answer: ["Broke","Struggling","Getting By","Middle Class","Comfortable","Wealthy","Millionaire","Billionaire"] },
-  { theme: "Brightness",  emoji: "\ud83d\udca1",  low: "Darkest",  high: "Brightest",colorA: "#1e1b4b", colorB: "#fef08a", answer: ["Cave","Midnight","Overcast","Dawn","Cloudy","Daylight","Spotlight","Sun"] },
-  { theme: "Age",         emoji: "\u23f3",  low: "Youngest", high: "Oldest",   colorA: "#bfdbfe", colorB: "#92400e", answer: ["Newborn","Toddler","Child","Teen","Young Adult","Middle-Aged","Senior","Ancient"] },
-];
+import PUZZLES from "../data/puzzles";
+import styles from "./SpectrumGame.module.css";
 
 // ─── Utilities ────────────────────────────────────────────────
 function seededRand(seed) {
@@ -59,15 +49,15 @@ function gradColor(colorA, colorB, t) {
 }
 
 function getScoreLabel(pct) {
-  if (pct === 1)    return { text: "\ud83c\udfaf Perfect!",     color: "#22c55e" };
-  if (pct >= 0.75)  return { text: "\u2b50 Great!",        color: "#86efac" };
-  if (pct >= 0.5)   return { text: "\ud83d\udc4d Good!",         color: "#fbbf24" };
-  return              { text: "\ud83d\udcda Keep Going!",   color: "#f97316" };
+  if (pct === 1)    return { text: "\ud83c\udfaf Perfect!",   color: "#22c55e" };
+  if (pct >= 0.75)  return { text: "\u2b50 Great!",      color: "#86efac" };
+  if (pct >= 0.5)   return { text: "\ud83d\udc4d Good!",       color: "#fbbf24" };
+  return              { text: "\ud83d\udcda Keep Going!", color: "#f97316" };
 }
 
 const RESULT_COLOR = { perfect: "#22c55e", close: "#fbbf24", near: "#f97316", off: "#ef4444" };
-const RESULT_EMOJI = { perfect: "\u2713",       close: "~",       near: "\u2195",       off: "\u2717" };
-const RESULT_SHARE = { perfect: "\ud83d\udfe2",       close: "\ud83d\udfe1",       near: "\ud83d\udfe0",       off: "\ud83d\udd34" };
+const RESULT_EMOJI = { perfect: "\u2713", close: "~", near: "\u2195", off: "\u2717" };
+const RESULT_SHARE = { perfect: "\ud83d\udfe2", close: "\ud83d\udfe1", near: "\ud83d\udfe0", off: "\ud83d\udd34" };
 
 // ─── localStorage helpers ────────────────────────────────────
 function loadStorage(key, fallback) {
@@ -85,16 +75,19 @@ function saveStorage(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // quota exceeded — silently fail
+    // quota exceeded
   }
 }
+
+// ─── Shared inline style fragments ──────────────────────────
+const FONT_OUTFIT = "var(--font-outfit, 'Outfit', sans-serif)";
+const FONT_SERIF = "var(--font-dm-serif, 'DM Serif Display', serif)";
 
 // ─── Component ────────────────────────────────────────────────
 export default function SpectrumGame() {
   const seed    = getDailySeed();
   const puzzle  = PUZZLES[seed % PUZZLES.length];
 
-  // Check if today's puzzle was already completed
   const [savedState] = useState(() => {
     const saved = loadStorage("spectrum-state", null);
     if (saved && saved.seed === seed) return saved;
@@ -108,9 +101,12 @@ export default function SpectrumGame() {
   const [animating, setAnimating] = useState(false);
   const [xp,        setXp]        = useState(() => loadStorage("spectrum-xp", 0));
   const [streak,    setStreak]    = useState(() => {
-    const data = loadStorage("spectrum-streak", { count: 0, lastSeed: 0 });
-    // Reset streak if they missed a day (seed jumps by more than 1)
-    if (data.lastSeed > 0 && seed - data.lastSeed > 1) return 0;
+    const data = loadStorage("spectrum-streak", { count: 0, lastDate: null });
+    if (!data.lastDate) return data.count;
+    const last = new Date(data.lastDate + "T00:00:00");
+    const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00");
+    const diffDays = Math.round((today - last) / 86400000);
+    if (diffDays > 1) return 0;
     return data.count;
   });
   const [xpPop,     setXpPop]     = useState(null);
@@ -118,13 +114,11 @@ export default function SpectrumGame() {
   const level      = Math.floor(xp / 200) + 1;
   const xpInLevel  = xp % 200;
 
-  // Persist XP whenever it changes
   useEffect(() => { saveStorage("spectrum-xp", xp); }, [xp]);
-
-  // Persist streak whenever it changes
   useEffect(() => {
-    saveStorage("spectrum-streak", { count: streak, lastSeed: seed });
-  }, [streak, seed]);
+    const today = new Date().toISOString().slice(0, 10);
+    saveStorage("spectrum-streak", { count: streak, lastDate: today });
+  }, [streak]);
 
   const getResult = useCallback((word, idx) => {
     const diff = Math.abs(puzzle.answer.indexOf(word) - idx);
@@ -153,6 +147,13 @@ export default function SpectrumGame() {
     setTimeout(() => setAnimating(false), 200);
   };
 
+  const handleCardKeyDown = (e, idx) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleTap(idx);
+    }
+  };
+
   const submit = () => {
     const earned = Math.max(10, Math.round(pct * 80) + 10 + streak * 2);
     setPhase("reveal");
@@ -161,7 +162,6 @@ export default function SpectrumGame() {
       setXp(x  => x + earned);
       setStreak(s => s + 1);
       setXpPop(earned);
-      // Save completed state so refreshing shows results
       saveStorage("spectrum-state", { seed, cards });
       setTimeout(() => setXpPop(null), 2200);
     }, 300);
@@ -173,7 +173,6 @@ export default function SpectrumGame() {
     setPhase("play");
     setRevealed(false);
     setXpPop(null);
-    // Clear saved state so they can re-attempt
     saveStorage("spectrum-state", null);
   };
 
@@ -187,26 +186,18 @@ export default function SpectrumGame() {
 
   // ── Render ───────────────────────────────────────────────────
   return (
-    <div style={{ minHeight:"100vh", background:"#07070f", color:"#e8e8f0", fontFamily:"var(--font-dm-serif, 'DM Serif Display', Georgia, serif)", maxWidth:430, margin:"0 auto", padding:"0 16px 40px", userSelect:"none", WebkitTapHighlightColor:"transparent", position:"relative", overflowX:"hidden" }}>
-      <style>{`
-        @keyframes fadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes popIn   { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.6)} 65%{transform:translate(-50%,-50%) scale(1.08)} 100%{opacity:1;transform:translate(-50%,-50%) scale(1)} }
-        @keyframes glow    { 0%,100%{opacity:.4} 50%{opacity:1} }
-        @keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
-        .spectrum-card { transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
-        .spectrum-card:active { transform: scale(0.975) !important; }
-      `}</style>
+    <div style={{ minHeight:"100vh", background:"#07070f", color:"#e8e8f0", fontFamily:FONT_SERIF, maxWidth:430, margin:"0 auto", padding:"0 16px 40px", userSelect:"none", WebkitTapHighlightColor:"transparent", position:"relative", overflowX:"hidden" }}>
 
       {/* Ambient background glow */}
-      <div style={{ position:"fixed", top:-80, left:"50%", transform:"translateX(-50%)", width:320, height:320, borderRadius:"50%", background:`radial-gradient(circle, ${puzzle.colorB}18 0%, transparent 70%)`, pointerEvents:"none", animation:"glow 3s ease-in-out infinite" }} />
+      <div className={styles.ambientGlow} style={{ position:"fixed", top:-80, left:"50%", transform:"translateX(-50%)", width:320, height:320, borderRadius:"50%", background:`radial-gradient(circle, ${puzzle.colorB}18 0%, transparent 70%)`, pointerEvents:"none" }} />
 
       {/* XP Pop Overlay */}
       {xpPop && (
-        <div style={{ position:"fixed", top:"50%", left:"50%", zIndex:100, animation:"popIn 0.4s cubic-bezier(.22,1,.36,1) both", textAlign:"center", pointerEvents:"none" }}>
+        <div className={styles.xpPop} role="status" aria-live="assertive" style={{ position:"fixed", top:"50%", left:"50%", zIndex:100, textAlign:"center", pointerEvents:"none" }}>
           <div style={{ background:"linear-gradient(135deg,#1a1a3e,#2a1a5e)", border:"1px solid #4c3a9a", borderRadius:24, padding:"20px 36px", boxShadow:"0 12px 60px #7c3aed66" }}>
-            <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:52, fontWeight:800, color:"#ffd166", lineHeight:1 }}>+{xpPop}</div>
-            <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:11, color:"#a78bfa", letterSpacing:3, marginTop:4 }}>XP EARNED</div>
-            {streak > 1 && <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:12, color:"#ffd16688", marginTop:8 }}>{"\ud83d\udd25"} {streak} day streak!</div>}
+            <div style={{ fontFamily:FONT_OUTFIT, fontSize:52, fontWeight:800, color:"#ffd166", lineHeight:1 }}>+{xpPop}</div>
+            <div style={{ fontFamily:FONT_OUTFIT, fontSize:11, color:"#a78bfa", letterSpacing:3, marginTop:4 }}>XP EARNED</div>
+            {streak > 1 && <div style={{ fontFamily:FONT_OUTFIT, fontSize:12, color:"#ffd16688", marginTop:8 }}>{"\ud83d\udd25"} {streak} day streak!</div>}
           </div>
         </div>
       )}
@@ -215,19 +206,19 @@ export default function SpectrumGame() {
       <div style={{ paddingTop:24, paddingBottom:12, display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
         <div>
           <div style={{ fontSize:32, fontWeight:400, letterSpacing:"-1px", color:"#fff", lineHeight:1, fontStyle:"italic" }}>Spectrum</div>
-          <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:10, color:"#33334a", letterSpacing:3, marginTop:4 }}>DAILY &middot; #{seed % 365}</div>
+          <div style={{ fontFamily:FONT_OUTFIT, fontSize:10, color:"#33334a", letterSpacing:3, marginTop:4 }}>DAILY &middot; #{seed % 365}</div>
         </div>
         <div style={{ display:"flex", gap:16, alignItems:"center", paddingTop:4 }}>
           <div style={{ textAlign:"center" }}>
-            <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:700, fontSize:18, color:"#ffd166" }}>{"\ud83d\udd25"} {streak}</div>
-            <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:8, color:"#33334a", letterSpacing:1.5 }}>STREAK</div>
+            <div style={{ fontFamily:FONT_OUTFIT, fontWeight:700, fontSize:18, color:"#ffd166" }}>{"\ud83d\udd25"} {streak}</div>
+            <div style={{ fontFamily:FONT_OUTFIT, fontSize:8, color:"#33334a", letterSpacing:1.5 }}>STREAK</div>
           </div>
           <div style={{ textAlign:"center", minWidth:52 }}>
-            <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:700, fontSize:14, color:"#a78bfa" }}>Lv {level}</div>
+            <div style={{ fontFamily:FONT_OUTFIT, fontWeight:700, fontSize:14, color:"#a78bfa" }}>Lv {level}</div>
             <div style={{ width:52, height:4, background:"#12122a", borderRadius:2, marginTop:5, overflow:"hidden" }}>
               <div style={{ height:"100%", width:`${(xpInLevel / 200) * 100}%`, background:"linear-gradient(90deg,#6d28d9,#a78bfa)", borderRadius:2, transition:"width 1s cubic-bezier(.22,1,.36,1)" }} />
             </div>
-            <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:8, color:"#33334a", marginTop:3 }}>{xpInLevel}/200 XP</div>
+            <div style={{ fontFamily:FONT_OUTFIT, fontSize:8, color:"#33334a", marginTop:3 }}>{xpInLevel}/200 XP</div>
           </div>
         </div>
       </div>
@@ -236,28 +227,28 @@ export default function SpectrumGame() {
       <div style={{ background:"#0d0d1e", border:"1px solid #1c1c35", borderRadius:20, padding:"14px 18px", marginBottom:12 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
           <span style={{ fontSize:22 }}>{puzzle.emoji}</span>
-          <span style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:700, fontSize:18, color:"#fff" }}>{puzzle.theme}</span>
+          <span style={{ fontFamily:FONT_OUTFIT, fontWeight:700, fontSize:18, color:"#fff" }}>{puzzle.theme}</span>
           {phase === "reveal" && revealed && (
-            <span style={{ marginLeft:"auto", fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:700, fontSize:14, color:label.color, animation:"slideIn 0.3s ease" }}>
+            <span className={styles.slideIn} style={{ marginLeft:"auto", fontFamily:FONT_OUTFIT, fontWeight:700, fontSize:14, color:label.color }}>
               {label.text}
             </span>
           )}
         </div>
         <div style={{ height:8, borderRadius:4, background:`linear-gradient(to right, ${puzzle.colorA}, ${puzzle.colorB})`, boxShadow:`0 0 20px ${puzzle.colorB}55`, marginBottom:6 }} />
         <div style={{ display:"flex", justifyContent:"space-between" }}>
-          <span style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:10, color:puzzle.colorA, fontWeight:600, letterSpacing:1 }}>{puzzle.low.toUpperCase()}</span>
-          <span style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:10, color:puzzle.colorB, fontWeight:600, letterSpacing:1 }}>{puzzle.high.toUpperCase()}</span>
+          <span style={{ fontFamily:FONT_OUTFIT, fontSize:10, color:puzzle.colorA, fontWeight:600, letterSpacing:1 }}>{puzzle.low.toUpperCase()}</span>
+          <span style={{ fontFamily:FONT_OUTFIT, fontSize:10, color:puzzle.colorB, fontWeight:600, letterSpacing:1 }}>{puzzle.high.toUpperCase()}</span>
         </div>
       </div>
 
       {/* ── Instruction / Score Bar ── */}
       {phase === "play" && (
-        <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:12, color:"#33334a", textAlign:"center", marginBottom:12 }}>
+        <div style={{ fontFamily:FONT_OUTFIT, fontSize:12, color:"#33334a", textAlign:"center", marginBottom:12 }}>
           {selected !== null ? "Tap another card to swap \u2195" : "Tap a card to select, then tap another to swap"}
         </div>
       )}
       {phase === "reveal" && revealed && (
-        <div style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", display:"flex", justifyContent:"center", gap:20, marginBottom:12, fontSize:13, color:"#555577", animation:"fadeUp 0.3s ease" }}>
+        <div className={styles.fadeUp} aria-live="polite" style={{ fontFamily:FONT_OUTFIT, display:"flex", justifyContent:"center", gap:20, marginBottom:12, fontSize:13, color:"#555577" }}>
           <span style={{ color:"#22c55e" }}>{"\u2713"} {results.filter(r => r === "perfect").length} perfect</span>
           <span style={{ color:"#fbbf24" }}>~ {results.filter(r => r === "close").length} close</span>
           <span style={{ color:"#ef4444" }}>{"\u2717"} {results.filter(r => r === "off" || r === "near").length} off</span>
@@ -274,7 +265,14 @@ export default function SpectrumGame() {
           const correctIdx  = puzzle.answer.indexOf(word);
 
           return (
-            <div key={word} className="spectrum-card" onClick={() => handleTap(idx)}
+            <div
+              key={word}
+              className={styles.card}
+              role="button"
+              tabIndex={0}
+              aria-label={`Position ${idx + 1}: ${word}.${isSelected ? " Selected." : ""}`}
+              onClick={() => handleTap(idx)}
+              onKeyDown={(e) => handleCardKeyDown(e, idx)}
               style={{
                 background:   isSelected ? "#13133a" : rc ? `${rc}0d` : "#0d0d1e",
                 border:       `1.5px solid ${isSelected ? "#7c3aed" : rc ? `${rc}55` : "#1c1c35"}`,
@@ -290,12 +288,12 @@ export default function SpectrumGame() {
               }}
             >
               {/* Position badge */}
-              <div style={{ width:32, height:32, borderRadius:9, flexShrink:0, background:rc ? `${rc}15` : `${slotColor}12`, border:`1px solid ${rc ? `${rc}44` : `${slotColor}33`}`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:700, fontSize:12, color: rc ?? slotColor }}>
+              <div style={{ width:32, height:32, borderRadius:9, flexShrink:0, background:rc ? `${rc}15` : `${slotColor}12`, border:`1px solid ${rc ? `${rc}44` : `${slotColor}33`}`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT_OUTFIT, fontWeight:700, fontSize:12, color: rc ?? slotColor }}>
                 {idx + 1}
               </div>
 
               {/* Word */}
-              <span style={{ flex:1, fontFamily:"var(--font-dm-serif, 'DM Serif Display', serif)", fontSize:17, color: rc ?? (isSelected ? "#fff" : "#c8c8e0"), fontWeight:400, letterSpacing:0.3 }}>
+              <span style={{ flex:1, fontFamily:FONT_SERIF, fontSize:17, color: rc ?? (isSelected ? "#fff" : "#c8c8e0"), fontWeight:400, letterSpacing:0.3 }}>
                 {word}
               </span>
 
@@ -303,9 +301,9 @@ export default function SpectrumGame() {
               {res && (
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                   {res !== "perfect" && (
-                    <span style={{ fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontSize:10, color:"#33334a" }}>{"\u2192"} #{correctIdx + 1}</span>
+                    <span style={{ fontFamily:FONT_OUTFIT, fontSize:10, color:"#33334a" }}>{"\u2192"} #{correctIdx + 1}</span>
                   )}
-                  <div style={{ width:26, height:26, borderRadius:7, background:`${rc}22`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:700, fontSize:13, color: rc }}>
+                  <div style={{ width:26, height:26, borderRadius:7, background:`${rc}22`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT_OUTFIT, fontWeight:700, fontSize:13, color: rc }}>
                     {RESULT_EMOJI[res]}
                   </div>
                 </div>
@@ -326,18 +324,18 @@ export default function SpectrumGame() {
       <div style={{ marginTop:20 }}>
         {phase === "play" ? (
           <button onClick={submit}
-            style={{ width:"100%", padding:"16px", background:"linear-gradient(135deg,#3b0764,#6d28d9)", border:"none", borderRadius:16, color:"#fff", fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:700, fontSize:14, letterSpacing:2, cursor:"pointer", boxShadow:"0 8px 32px #6d28d955" }}
+            style={{ width:"100%", padding:"16px", background:"linear-gradient(135deg,#3b0764,#6d28d9)", border:"none", borderRadius:16, color:"#fff", fontFamily:FONT_OUTFIT, fontWeight:700, fontSize:14, letterSpacing:2, cursor:"pointer", boxShadow:"0 8px 32px #6d28d955" }}
           >
             LOCK IN ANSWER {"\u2192"}
           </button>
         ) : (
-          <div style={{ display:"flex", gap:10, animation:"fadeUp 0.3s ease" }}>
+          <div className={styles.fadeUp} style={{ display:"flex", gap:10 }}>
             <button onClick={retry}
-              style={{ flex:1, padding:"15px", background:"#0d0d1e", border:"1px solid #1c1c35", borderRadius:16, color:"#555577", fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:600, fontSize:13, cursor:"pointer" }}>
+              style={{ flex:1, padding:"15px", background:"#0d0d1e", border:"1px solid #1c1c35", borderRadius:16, color:"#555577", fontFamily:FONT_OUTFIT, fontWeight:600, fontSize:13, cursor:"pointer" }}>
               {"\u21ba"} Retry
             </button>
             <button onClick={share}
-              style={{ flex:2, padding:"15px", background:"linear-gradient(135deg,#064e3b,#059669)", border:"none", borderRadius:16, color:"#fff", fontFamily:"var(--font-outfit, 'Outfit', sans-serif)", fontWeight:700, fontSize:13, cursor:"pointer", boxShadow:"0 6px 24px #05966944" }}>
+              style={{ flex:2, padding:"15px", background:"linear-gradient(135deg,#064e3b,#059669)", border:"none", borderRadius:16, color:"#fff", fontFamily:FONT_OUTFIT, fontWeight:700, fontSize:13, cursor:"pointer", boxShadow:"0 6px 24px #05966944" }}>
               Share Result {"\ud83d\udce4"}
             </button>
           </div>

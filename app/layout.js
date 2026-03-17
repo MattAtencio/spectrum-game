@@ -23,6 +23,17 @@ export const metadata = {
     statusBarStyle: "black-translucent",
     title: "Spectrum",
   },
+  openGraph: {
+    title: "Spectrum — Daily Word Puzzle",
+    description: "Sort words into the right order along a gradient. New puzzle every day.",
+    type: "website",
+    siteName: "Spectrum",
+  },
+  twitter: {
+    card: "summary",
+    title: "Spectrum — Daily Word Puzzle",
+    description: "Sort words into the right order along a gradient.",
+  },
 };
 
 export const viewport = {
