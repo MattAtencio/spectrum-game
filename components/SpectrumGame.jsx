@@ -86,6 +86,71 @@ const F_SER = "var(--font-dm-serif, 'DM Serif Display', serif)";
 // ─── Drag threshold (px) — below this is a tap ──────────────
 const DRAG_THRESHOLD = 8;
 
+// ─── Onboarding Modal ────────────────────────────────────────
+function OnboardingModal({ onClose }) {
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div style={{ textAlign:"center", marginBottom:20 }}>
+          <div style={{ fontSize:36, fontWeight:400, fontStyle:"italic", color:"#fff", lineHeight:1 }}>Spectrum</div>
+          <div style={{ fontFamily:F_OUT, fontSize:11, color:"#555577", marginTop:6 }}>Daily word ordering puzzle</div>
+        </div>
+
+        <div style={{ fontFamily:F_OUT, fontSize:13, color:"#c8c8e0", lineHeight:1.6, marginBottom:16 }}>
+          Sort the 8 words from <span style={{ color:"#93c5fd" }}>low</span> to <span style={{ color:"#f97316" }}>high</span> along the gradient.
+        </div>
+
+        {/* Animated demo — card sliding into position */}
+        <div style={{ background:"#07070f", borderRadius:14, padding:"12px 10px", marginBottom:16 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8, padding:"0 4px" }}>
+            <span style={{ fontFamily:F_OUT, fontSize:8, color:"#93c5fd", fontWeight:600, letterSpacing:1 }}>COLDEST</span>
+            <span style={{ fontFamily:F_OUT, fontSize:8, color:"#ef4444", fontWeight:600, letterSpacing:1 }}>HOTTEST</span>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+            <div className={styles.demoCard}>
+              <div style={{ width:22, height:22, borderRadius:6, background:"#93c5fd12", border:"1px solid #93c5fd33", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:F_OUT, fontWeight:700, fontSize:9, color:"#93c5fd" }}>1</div>
+              <span style={{ fontFamily:F_SER, fontSize:13, color:"#c8c8e0" }}>Frost</span>
+            </div>
+            <div className={styles.demoCardActive}>
+              <div style={{ width:22, height:22, borderRadius:6, background:"#7c3aed22", border:"1px solid #7c3aed55", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:F_OUT, fontWeight:700, fontSize:9, color:"#a78bfa" }}>2</div>
+              <span style={{ fontFamily:F_SER, fontSize:13, color:"#fff" }}>Warm</span>
+              <div style={{ marginLeft:"auto", display:"flex", flexDirection:"column", gap:1.5, opacity:0.4 }}>
+                {[0,1,2].map(i => <div key={i} style={{ width:12, height:1.5, background:"#a78bfa", borderRadius:1 }} />)}
+              </div>
+            </div>
+            <div className={styles.demoCardShifted}>
+              <div style={{ width:22, height:22, borderRadius:6, background:"#f9731612", border:"1px solid #f9731633", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:F_OUT, fontWeight:700, fontSize:9, color:"#f97316" }}>3</div>
+              <span style={{ fontFamily:F_SER, fontSize:13, color:"#c8c8e0" }}>Scorching</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ fontFamily:F_OUT, fontSize:12, color:"#555577", lineHeight:1.6, marginBottom:6 }}>
+          <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:8 }}>
+            <span style={{ color:"#a78bfa", fontSize:14, lineHeight:1 }}>{"\u2195"}</span>
+            <span><span style={{ color:"#c8c8e0" }}>Drag</span> cards to reorder, or <span style={{ color:"#c8c8e0" }}>tap</span> two cards to swap</span>
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:8 }}>
+            <span style={{ color:"#22c55e", fontSize:14, lineHeight:1 }}>{"\u2713"}</span>
+            <span>Closer to the correct position = more points</span>
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+            <span style={{ color:"#ffd166", fontSize:14, lineHeight:1 }}>{"\ud83d\udd25"}</span>
+            <span>Play daily to build your streak and earn XP</span>
+          </div>
+        </div>
+
+        <button
+          onClick={onClose}
+          style={{ width:"100%", padding:"14px", marginTop:16, background:"linear-gradient(135deg,#3b0764,#6d28d9)", border:"none", borderRadius:14, color:"#fff", fontFamily:F_OUT, fontWeight:700, fontSize:13, letterSpacing:2, cursor:"pointer", boxShadow:"0 6px 24px #6d28d955" }}
+        >
+          PLAY
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────
 export default function SpectrumGame() {
   const seed    = getDailySeed();
@@ -112,6 +177,7 @@ export default function SpectrumGame() {
     return data.count;
   });
   const [xpPop,     setXpPop]     = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(() => !loadStorage("spectrum-onboarded", false));
 
   // Drag state (refs for performance — no re-renders during drag)
   const [dragState, setDragState] = useState(null); // { idx, startY, currentY }
@@ -283,6 +349,14 @@ export default function SpectrumGame() {
   // ── Render ───────────────────────────────────────────────────
   return (
     <div className={styles.container} style={{ fontFamily: F_SER }}>
+
+      {/* Onboarding modal for new users */}
+      {showOnboarding && (
+        <OnboardingModal onClose={() => {
+          setShowOnboarding(false);
+          saveStorage("spectrum-onboarded", true);
+        }} />
+      )}
 
       {/* Ambient background glow */}
       <div className={styles.ambientGlow} style={{ position:"fixed", top:-80, left:"50%", transform:"translateX(-50%)", width:320, height:320, borderRadius:"50%", background:`radial-gradient(circle, ${puzzle.colorB}18 0%, transparent 70%)`, pointerEvents:"none" }} />
