@@ -18,6 +18,10 @@ export const metadata = {
   title: "Spectrum — Daily Word Puzzle",
   description: "Sort words into the right order along a gradient. New puzzle every day.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

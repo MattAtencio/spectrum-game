@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import PUZZLES from "../data/puzzles";
 import styles from "./SpectrumGame.module.css";
 
@@ -379,6 +380,7 @@ export default function SpectrumGame() {
           <div style={{ fontFamily:F_OUT, fontSize:9, color:"#33334a", letterSpacing:3, marginTop:3 }}>DAILY &middot; #{seed % 365}</div>
         </div>
         <div style={{ display:"flex", gap:14, alignItems:"center", paddingTop:2 }}>
+          <Link href="/help" aria-label="Help" style={{ width:28, height:28, borderRadius:8, background:"#0d0d1e", border:"1px solid #1c1c35", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:F_OUT, fontWeight:700, fontSize:13, color:"#555577", textDecoration:"none", cursor:"pointer", flexShrink:0 }}>?</Link>
           <div style={{ textAlign:"center" }}>
             <div style={{ fontFamily:F_OUT, fontWeight:700, fontSize:16, color:"#ffd166" }}>{"\ud83d\udd25"} {streak}</div>
             <div style={{ fontFamily:F_OUT, fontSize:7, color:"#33334a", letterSpacing:1.5 }}>STREAK</div>
