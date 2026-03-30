@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/MattAtencio/portfolio/main/schemas/portfolio.schema.json",
+  "title": "Spectrum",
+  "tagline": "Color-matching word puzzle game",
+  "description": "Spectrum is a daily puzzle game where players sort words along a color gradient. Built as a Progressive Web App with daily puzzle rotation using seeded randomness.",
+  "category": "games",
+  "status": "active",
+  "techStack": [
+    "Next.js",
+    "JavaScript",
+    "PWA",
+    "CSS Modules"
+  ],
+  "liveUrl": "https://spectrum.mattatencio.com",
+  "highlights": [
+    "Daily puzzle rotation with seeded randomness",
+    "Installable PWA with offline support",
+    "Mobile-first design optimized for touch"
+  ],
+  "isPublic": true,
+  "startDate": "2025-01",
+  "featured": false
+}
